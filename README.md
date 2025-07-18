@@ -6,7 +6,7 @@ A personal, self-hosted application to track movie and TV show releases. It uses
 
 ## Features
 
-- **Movie & TV Show Tracking:** Add movies and TV shows to your personal tracking list.
+- **Movie & TV Show Tracking:** Add movies and TV shows to your personal tracking list. (**TV SHOW Tracking in works**)
 - **Discover:** Browse trending, popular, and upcoming movies.
 - **Release Detection:** Automatically checks configured websites to see if a tracked item has been released.
 - **Search:** Easily find movies and TV shows. (**Advanced Search in works**)
