@@ -1,121 +1,112 @@
-Movie Tracker & Release Notifier
+# Movie Tracker & Release Notifier
 
 A personal, self-hosted application to track movie and TV show releases. It uses Puppeteer for automated release checking and the TMDB API for movie data, with optional Telegram notifications.
-Features
 
-    Movie & TV Show Tracking: Add movies and TV shows to your personal tracking list.
+---
 
-    Discover: Browse trending, popular, and upcoming movies.
+## Features
 
-    Release Detection: Automatically checks configured websites to see if a tracked item has been released.
+- **Movie & TV Show Tracking:** Add movies and TV shows to your personal tracking list.
+- **Discover:** Browse trending, popular, and upcoming movies.
+- **Release Detection:** Automatically checks configured websites to see if a tracked item has been released.
+- **Advanced Search:** Easily find movies and TV shows.
+- **Similar Movies:** Get recommendations based on movies you like.
+- **Provider Information:** See where a movie is available for streaming (powered by JustWatch).
+- **Telegram Notifications (Optional):** Set up a Telegram bot to receive notifications for new releases.
+- **Configurable:** Customize release region, check schedule, and notifications.
 
-    Advanced Search: Easily find movies and TV shows.
+---
 
-    Similar Movies: Get recommendations based on movies you like.
+## ⚠️ Legal Disclaimer
 
-    Provider Information: See where a movie is available for streaming, powered by JustWatch / TMDB.
+This application includes an automated data retrieval component that is intended for **personal, local use only**.
 
-    Telegram Notifications: (Optional) Set up a Telegram bot to receive notifications for new releases.
+- **User Responsibility:** You are solely responsible for how you configure and use this feature.
+- **Permissions:** Only access websites for which you have explicit permission. Review and comply with the terms of service of any site you use.
+- **Copyrighted Material:** Do not use this tool to access, or distribute copyrighted material without legal rights.
 
-    Configurable: Settings for release region, check schedule, and notifications.
+The user of this tool is solely responsible for any misuse or legal issues arising from its use.
 
-    IMPORTANT: Legal Disclaimer
+---
 
-    This application includes an automated data retrieval component that is intended for personal, local use only.
+## Prerequisites
 
-        User Responsibility: You are solely responsible for how you configure and use this feature.
+Ensure the following are installed on your system:
 
-        Permissions: The automated checker should only be configured to access websites for which you have explicit permission to do so. It is your responsibility to review and comply with the terms of service of any website you intend to access.
+- [Node.js](https://nodejs.org/) (includes npm)
 
-        Copyrighted Material: Do not use this tool to access, download, or distribute copyrighted material for which you do not have the legal rights. The developers of this application are not responsible for any misuse or legal issues that may arise from its use.
+---
 
-Prerequisites
+## Installation & Setup
 
-Before you begin, ensure you have the following installed on your system:
+### 1. Clone the Repository
 
-    Node.js (which includes npm)
+```bash
+git clone https://github.com/toobi-jpg/local-movie-tracker
+```
 
-Installation & Setup
+### 2. Install Backend Dependencies
 
-Follow these steps to get your local environment set up.
-
-1. Clone the Repository
-
-git clone <https://github.com/toobi-jpg/local-movie-tracker>
-
-2. Install Backend Dependencies
-
-Navigate to the backend directory and install the required packages.
-
+```bash
 cd backend
 npm install
+```
 
-3. Install Frontend Dependencies
+### 3. Install Frontend Dependencies
 
-From the root directory of the project, install the frontend packages.
+From the root project directory:
 
+```bash
 npm install
+```
 
-4. Configure Environment Variables
+### 4. Configure Environment Variables
 
-The backend requires a set of environment variables to function correctly.
+1. Navigate to the `backend` directory.
+2. Create a new file named `.env.local`.
+3. Copy the contents of `env.example.txt` into `.env.local`.
+4. Fill in the required values with your own API keys and settings.
 
-    Navigate to the backend directory.
+---
 
-    Create a new file named .env.local.
+## Running the Application
 
-    Copy the contents from the .env.example file into your new .env.local file.
+From the root directory, start both the frontend and backend servers with:
 
-    Fill in the required values in .env.local with your own keys and configuration.
-
-Running the Application
-
-Once the installation and configuration are complete, you can start both the frontend and backend servers concurrently with a single command from the root directory.
-
+```bash
 npm run start-all
+```
 
-    The React frontend will be available at http://localhost:5173 (or configure a available port).
+- The frontend will be available at: [http://localhost:5173](http://localhost:5173)
+- The backend will run on: [http://localhost:3001](http://localhost:3001)
 
-    The Express backend will run on http://localhost:3001. (same here).
+---
 
-Dependencies
+## Dependencies
 
 <details>
 <summary><strong>Frontend Dependencies</strong></summary>
 
-    @tailwindcss/vite
-
-    lottie-react
-
-    motion
-
-    react
-
-    react-dom
-
-    react-indiana-drag-scroll
-
-    socket.io-client
-
-    tailwindcss
+- @tailwindcss/vite
+- lottie-react
+- motion
+- react
+- react-dom
+- react-indiana-drag-scroll
+- socket.io-client
+- tailwindcss
 
 </details>
 
 <details>
 <summary><strong>Backend Dependencies</strong></summary>
 
-    cors
-
-    dotenv
-
-    express
-
-    node-cron
-
-    node-telegram-bot-api
-
-    puppeteer
-
-    socket.io
+- cors
+- dotenv
+- express
+- node-cron
+- node-telegram-bot-api
+- puppeteer
+- socket.io
 
 </details>
