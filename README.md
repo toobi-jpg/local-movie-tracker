@@ -19,7 +19,7 @@ A personal, self-hosted application to track movie and TV show releases. It uses
 
 ## ⚠️ Legal Disclaimer
 
-This application includes an automated data retrieval component that is intended for **personal, local use only**.
+This application includes an automated data retrieval component (Puppeteer) that is intended for **personal, local use only**.
 
 - **User Responsibility:** You are solely responsible for how you configure and use this feature.
 - **Permissions:** Only access websites for which you have explicit permission. Review and comply with the terms of service of any site you use.
