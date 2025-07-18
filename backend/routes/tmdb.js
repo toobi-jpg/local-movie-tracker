@@ -1,6 +1,7 @@
 /* eslint-disable */
 const express = require("express");
 const router = express.Router();
+const { fetchImdbRating } = require("./omdb.js");
 
 const TMDB_TOKEN = process.env.TMDB_ACCESS_TOKEN;
 
@@ -254,6 +255,42 @@ router.get("/providers/:query", async (req, res) => {
 
     const data = await response.json();
     res.json(data);
+  } catch (error) {
+    console.error("Error fetching similar movies on TMDb:", error);
+    res.status(500).json({ error: "Failed to fetch similar movies." });
+  }
+});
+
+router.get("/imdb-rating/:query", async (req, res) => {
+  const query = encodeURIComponent(req.params.query);
+  try {
+    const url = `https://api.themoviedb.org/3/movie/${query}/external_ids`;
+
+    const options = {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${TMDB_TOKEN}`,
+      },
+    };
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("TMDb API Error:", response.status, errorText);
+      return res
+        .status(response.status)
+        .json({ error: `TMDb API error: ${response.status} ${errorText}` });
+    }
+
+    const data = await response.json();
+    const imdbId = data.imdb_id;
+    if (imdbId) {
+      const omdbData = await fetchImdbRating(imdbId);
+      res.json(omdbData);
+    } else {
+      res.status(404).json({ error: "IMDb ID not found for this movie." });
+    }
   } catch (error) {
     console.error("Error fetching similar movies on TMDb:", error);
     res.status(500).json({ error: "Failed to fetch similar movies." });

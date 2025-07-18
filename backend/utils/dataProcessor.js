@@ -21,8 +21,8 @@ function findBestMatchInResults(
   const mustInclude2 = process.env.FILTER_TITLE_MUST_INCLUDE_2;
   const mustExclude1 = process.env.FILTER_TITLE_MUST_EXCLUDE_1;
   const iconMustMatch = process.env.FILTER_ICON_MUST_MATCH;
-
   let bestMatch = null;
+
   for (const scrapedItem of scrapedResults) {
     const normalizedScrapedTitle = scrapedItem.title
       ? scrapedItem.title.toLowerCase().replace(/[\.\_]/g, " ")
@@ -36,13 +36,10 @@ function findBestMatchInResults(
       !mustInclude1 || normalizedScrapedTitle.includes(mustInclude1);
     const hasRequiredKeyword2 =
       !mustInclude2 || normalizedScrapedTitle.includes(mustInclude2);
-
     const doesNotHaveExcludedKeyword =
       !mustExclude1 || !normalizedScrapedTitle.includes(mustExclude1);
-
     const hasMatchingIcon =
       !iconMustMatch || scrapedItem.icon === iconMustMatch;
-
     const uploadedIsAfterRelease =
       new Date(scrapedItem.uploadedDate) > movieReleaseDate;
 
@@ -116,7 +113,10 @@ async function processAndSaveScrapedData(
   storageData.push({ id, title, release_date, poster_path });
   io.emit("storage:updated", storageData);
 
-  const normalizedMovieTitle = title.toLowerCase().replace("*", "");
+  const normalizedMovieTitle = title
+    .toLowerCase()
+    .replace("*", "")
+    .replace(/[^a-z0-9\s]/g, "");
   const movieYear = new Date(release_date).getFullYear();
   const movieReleaseDateObj = new Date(release_date);
 

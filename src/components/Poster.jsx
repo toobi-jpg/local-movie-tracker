@@ -4,6 +4,8 @@ import { CameraIcon } from "../icons/CameraIcon";
 import { NoCameraIcon } from "../icons/NoCameraIcon";
 import { SquaresIcon } from "../icons/SquaresIcon";
 
+import ImdbInfo from "./ImdbInfo";
+
 import { SavedContext } from "../context/SavedContext";
 import { SimilarMoviesContext } from "../context/SimilarMoviesContext";
 import { SettingsContext } from "../context/SettingsContext";
@@ -29,6 +31,7 @@ export default function Poster({ data }) {
   const [providers, setProviders] = useState({});
   const [streamingOn, setStreamingOn] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isImdbOpen, setIsImdbOpen] = useState(false);
 
   const isMovieSaved = saved.some((movie) => movie.id === data.id);
   const isMovieReleased = saved.some(
@@ -113,6 +116,10 @@ export default function Poster({ data }) {
     },
   };
 
+  const handleImdbClick = () => {
+    setIsImdbOpen(true);
+  };
+
   const dateToday = () => new Date().toISOString().split("T")[0];
   const today = dateToday();
 
@@ -126,22 +133,52 @@ export default function Poster({ data }) {
         opacity: 0,
         transition: { duration: 0.3 },
       }}
+      title={data.title}
       className={`relative h-[250px] w-[165px] min-w-[165px] transition-all duration-200 ease-in-out group poster-shadow ${
         isMovieReleased
-          ? "hover:w-[350px] transition-all duration-400 ease-in-out bg-black overflow-hidden"
+          ? "hover:w-[350px] transition-all duration-400 ease-in-out bg-black"
           : "hover:scale-105 bg-transparent"
       }`}
       onMouseEnter={() => setMainHover(true)}
       onMouseLeave={() => setMainHover(false)}
     >
-      {/* <div
-        id="movie-title-tooltip"
-        className={`absolute bg-black/50 py-1 px-2 z-50 bottom-20 
-          rounded-lg opacity-0 border border-white/10 backdrop-blur-md left-1/2 
-        -translate-x-1/2 group-hover:opacity-100 `}
+      <motion.button
+        layout
+        transition={{
+          duration: 0.3,
+          ease: "easeInOut",
+        }}
+        id="imdb-info-button"
+        className={`absolute top-1 left-1 w-auto min-h-7 h-auto z-20
+        rounded-sm flex justify-center items-center px-1
+      bg-black/60 backdrop-blur-sm border border-yellow-400/40 
+      transition-all duration-100 ease-in-out opacity-0 group-hover:opacity-100
+      ${
+        isImdbOpen
+          ? "cursor-none pointer-events-none"
+          : "cursor-pointer hover:scale-110"
+      }`}
+        onClick={() => handleImdbClick()}
       >
-        <p className="text-xs text-nowrap">{data.title}</p>
-      </div> */}
+        <AnimatePresence>
+          {isImdbOpen ? (
+            <ImdbInfo movieId={data.id} />
+          ) : (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: 1,
+                transition: { duration: 1, ease: "easeInOut" },
+              }}
+              exit={{ opacity: 0 }}
+              className="text-[0.9rem] font-semibold font-[impact] 
+        pointer-events-none tracking-wid"
+            >
+              IMDb
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.button>
 
       {!isMovieReleased && (
         <div
@@ -150,16 +187,20 @@ export default function Poster({ data }) {
         py-0.5 px-1.5 text-center rounded-md border 
         ${
           data.release_date > today
-            ? "border-orange-600/20 bg-orange-950/40"
-            : "border-green-600/20 bg-green-950/40"
+            ? "border-orange-800/50 bg-black/30"
+            : "border-green-800/50 bg-black/30"
         }`}
         >
           {data.release_date > today ? (
-            <h2 className="text-xs font-medium small-text-shadow">Coming:</h2>
+            <h2 className="text-[0.6rem] font-medium small-text-shadow">
+              Coming:
+            </h2>
           ) : (
-            <h2 className="text-xs font-medium small-text-shadow">Released:</h2>
+            <h2 className="text-[0.6rem] font-medium small-text-shadow">
+              Released:
+            </h2>
           )}
-          <h2 className="text-xs font-medium small-text-shadow">
+          <h2 className="text-[0.6rem] font-medium small-text-shadow">
             {data.release_date}
           </h2>
         </div>
@@ -205,7 +246,7 @@ export default function Poster({ data }) {
         initial="default"
         animate={isMovieReleased && mainHover ? "hovered" : "default"}
         id="gradient-overlay-big"
-        className={`absolute z-20 w-full 
+        className={`absolute z-10 w-full 
           bg-linear-180 top-0 from-transparent from-70% 
         to-black/100 to-98%`}
       ></motion.div>

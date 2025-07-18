@@ -1,10 +1,7 @@
 import { useState, createContext, useEffect, useCallback } from "react";
-// import { io } from "socket.io-client";
 import { useSocket } from "./SocketContext";
 
 export const SavedContext = createContext();
-
-// const socket = io("http://localhost:3001");
 
 export function SavedProvider({ children }) {
   const [saved, setSaved] = useState([]);

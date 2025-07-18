@@ -30,7 +30,7 @@ const { findBestMatchInResults } = require("./utils/dataProcessor");
 let localFeatureHandler;
 
 try {
-  const { executeLocalFeature } = require("./local-feature/local.js");
+  const { executeLocalFeature } = require("../local-feature/local.js");
   localFeatureHandler = executeLocalFeature;
   console.log("local feature module loaded.");
 } catch (e) {
