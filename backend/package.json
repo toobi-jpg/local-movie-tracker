@@ -1,0 +1,28 @@
+{
+  "name": "whateverdude",
+  "version": "1.0.0",
+  "description": "backenddescription",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "latest-movies"
+  },
+  "keywords": [
+    "movies"
+  ],
+  "author": "kwl",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "node-cron": "^4.2.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "puppeteer": "^24.12.1",
+    "socket.io": "^4.8.1"
+  }
+}
