@@ -24,6 +24,8 @@ async function scrapeMovieData(movieTitle, release_date, movieId, io) {
       title: process.env.SELECTOR_TITLE,
       uploaded: process.env.SELECTOR_UPLOADED,
       icon: process.env.SELECTOR_ICON,
+      bond: process.env.SELECTOR_BOND,
+      bondAttribute: process.env.BOND_ATTRIBUTE,
       mass: process.env.SELECTOR_MASS,
       popularity: process.env.SELECTOR_POPULARITY,
       sourceCount: process.env.SELECTOR_SOURCE_COUNT,
@@ -78,6 +80,7 @@ async function scrapeMovieData(movieTitle, release_date, movieId, io) {
         const titleElement = entry.querySelector(sel.title);
         const uploadedSpan = entry.querySelector(sel.uploaded);
         const iconElement = entry.querySelector(sel.icon);
+        const bondElement = entry.querySelector(sel.bond);
         const massElement = entry.querySelector(sel.mass);
         const popularityElement = entry.querySelector(sel.popularity);
         const sourceCountElement = entry.querySelector(sel.sourceCount);
@@ -91,6 +94,9 @@ async function scrapeMovieData(movieTitle, release_date, movieId, io) {
             : "N/A",
           uploadedDate: uploadedSpan ? uploadedSpan.innerText.trim() : "N/A",
           icon: iconElement ? iconElement.alt : "N/A",
+          bond: bondElement
+            ? bondElement.getAttribute(sel.bondAttribute)
+            : null,
           massText: massElement ? massElement.innerText.trim() : "N/A",
           popularity: popularityElement
             ? parseInt(popularityElement.innerText.trim(), 10)

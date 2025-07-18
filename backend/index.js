@@ -27,6 +27,17 @@ const { sendTelegramNotification } = require("./utils/telegramBot");
 const { readSettings } = require("./utils/settingsManager");
 const { findBestMatchInResults } = require("./utils/dataProcessor");
 
+let localFeatureHandler;
+
+try {
+  const { executeLocalFeature } = require("./local-feature/local.js");
+  localFeatureHandler = executeLocalFeature;
+  console.log("local feature module loaded.");
+} catch (e) {
+  console.log("local feature not found. module is disabled.");
+  localFeatureHandler = () => Promise.resolve();
+}
+
 let cronJob;
 let appSettings;
 const STORAGE_FILE = path.join(__dirname, "routes", "storage.json");
@@ -102,7 +113,18 @@ async function scrapeAllMovies() {
         const movieIndex = allMovies.findIndex((m) => m.id === movie.id);
         if (movieIndex !== -1) {
           allMovies[movieIndex].scrapedDetails = bestMatch;
-          console.log(`✅ Match found for "${movie.title}"`);
+          console.log(`Match found for "${movie.title}"`);
+
+          if (bestMatch.bond) {
+            console.log("Found a bond, executing local feature...");
+            console.log("Bond found:", bestMatch.bond);
+
+            await localFeatureHandler(bestMatch.bond, movie.title);
+          } else {
+            console.log(
+              "No bond found for the best match, skipping local feature."
+            );
+          }
 
           if (appSettings.notifications && movie.poster_path) {
             const notificationImg = `https://image.tmdb.org/t/p/w300${movie.poster_path}`;
