@@ -2,17 +2,21 @@ import { useEffect, useState } from "react";
 import { StarIcon } from "../icons/StarIcon";
 import { motion } from "motion/react";
 
-export default function ImdbInfo({ movieId }) {
+export default function ImdbInfo({ movieData }) {
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchImdbData = async () => {
-      if (!movieId) return;
+      if (!movieData) return;
       try {
-        const response = await fetch(
-          `http://localhost:3001/tmdb/imdb-rating/${movieId}`
-        );
+        let backendUrl;
+        if (movieData.media_type === "movie") {
+          backendUrl = `http://localhost:3001/tmdb/imdb-rating-movie/${movieData.id}`;
+        } else {
+          backendUrl = `http://localhost:3001/tmdb/imdb-rating-series/${movieData.id}`;
+        }
+        const response = await fetch(backendUrl);
         if (!response.ok) {
           throw new Error("Failed to fetch IMDb info");
         }
@@ -28,18 +32,18 @@ export default function ImdbInfo({ movieId }) {
     };
 
     fetchImdbData();
-  }, [movieId]);
+  }, [movieData]);
 
   function formatString(stringNumber) {
     if (!stringNumber || typeof stringNumber !== "string") {
-      return "N/A";
+      return false;
     }
 
     const sanitizedString = stringNumber.replace(/[\$,]/g, "");
     const num = parseFloat(sanitizedString);
 
     if (isNaN(num)) {
-      return "N/A";
+      return false;
     }
 
     if (num >= 1000000) {
@@ -58,10 +62,6 @@ export default function ImdbInfo({ movieId }) {
   const formatedVotes = formatString(data?.imdbVotes);
   const formatedBoxOffice = formatString(data?.BoxOffice);
 
-  //   if (isLoading) {
-  //     return <div className="abslute left-10 top-10 z-50 text-xs"></div>;
-  //   }
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -79,12 +79,18 @@ export default function ImdbInfo({ movieId }) {
       </div>
 
       <div className="flex justify-center items-center text-center w-full">
-        <p className="text-[0.7rem] opacity-80">{formatedVotes}</p>
+        <p className="text-[0.65rem] font-semibold opacity-80 font-sans">
+          {formatedVotes}
+        </p>
       </div>
 
-      <div className="flex justify-center items-center text-center w-full">
-        <p className="text-[0.7rem] opacity-80">${formatedBoxOffice}</p>
-      </div>
+      {formatedBoxOffice && (
+        <div className="flex justify-center items-center text-center w-full">
+          <p className="text-[0.65rem] font-semibold font-sans opacity-80">
+            ${formatedBoxOffice}
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

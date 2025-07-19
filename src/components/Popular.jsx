@@ -45,7 +45,7 @@ export default function Popular() {
       <div className="relative w-full h-full items-center">
         <div className="absolute -top-5 left-0 flex justify-center items-center gap-1">
           <h1 className="text-2xl text-shadow-lg ">Popular</h1>
-          <StarIcon size={"1.9rem"} className={"opacity-80"} />
+          <StarIcon size={"1.9rem"} color="white" className={"opacity-80"} />
         </div>
 
         <ScrollContainer

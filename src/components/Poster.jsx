@@ -162,7 +162,7 @@ export default function Poster({ data }) {
       >
         <AnimatePresence>
           {isImdbOpen ? (
-            <ImdbInfo movieId={data.id} />
+            <ImdbInfo movieData={data} />
           ) : (
             <motion.p
               initial={{ opacity: 0 }}
