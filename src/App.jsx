@@ -12,24 +12,16 @@ import SimilarMoviesScreen from "./components/SimilarMovies/SimilarMoviesScreen"
 import SearchButton from "./components/Search/SearchButton";
 import Tracking from "./components/Tracking";
 import Settings from "./components/Settings";
+import { SearchResultsContext } from "./context/SearchResultsContext";
 
 import { SimilarMoviesContext } from "./context/SimilarMoviesContext";
 import { SavedContext } from "./context/SavedContext";
 
 function App() {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchButtonRef = useRef(null);
+  const { searchResults, resultsOpen } = useContext(SearchResultsContext);
   const { released, saved } = useContext(SavedContext);
 
   const { isOpen } = useContext(SimilarMoviesContext);
-
-  const handleCloseSearch = () => {
-    setSearchOpen(false);
-  };
-
-  const handleSearchOpen = () => {
-    setSearchOpen(true);
-  };
 
   return (
     <main className="relative py-10 px-4 md:px-10 hide-scrollbar">
@@ -46,7 +38,7 @@ function App() {
         className="fixed right-3 bottom-2 flex flex-col gap-4"
         style={{ zIndex: 999 }}
       >
-        <SearchButton handleSearch={handleSearchOpen} open={searchOpen} />
+        <SearchButton />
       </div>
 
       <div
@@ -54,14 +46,10 @@ function App() {
         className="relative w-full h-full flex flex-col items-center gap-5"
       >
         <AnimatePresence>
-          {searchOpen && (
-            <SearchScreen
-              handleClose={handleCloseSearch}
-              buttonRef={searchButtonRef}
-            />
-          )}
-          {isOpen && <SimilarMoviesScreen />}
+          {resultsOpen && searchResults.length > 0 && <SearchScreen />}
         </AnimatePresence>
+
+        {isOpen && <SimilarMoviesScreen />}
         <Upcoming />
         <Trending />
         <AnimatePresence>{released.length > 0 && <Released />}</AnimatePresence>

@@ -2,16 +2,17 @@ import { useEffect, useState } from "react";
 import { StarIcon } from "../icons/StarIcon";
 import { motion } from "motion/react";
 
-export default function ImdbInfo({ movieData }) {
+export default function ImdbInfo({ movieData, dateToday }) {
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchImdbData = async () => {
-      if (!movieData) return;
+      if (!movieData || movieData.release_date > dateToday) return;
+
       try {
         let backendUrl;
-        if (movieData.media_type === "movie") {
+        if (movieData.release_date) {
           backendUrl = `http://localhost:3001/tmdb/imdb-rating-movie/${movieData.id}`;
         } else {
           backendUrl = `http://localhost:3001/tmdb/imdb-rating-series/${movieData.id}`;
@@ -32,7 +33,7 @@ export default function ImdbInfo({ movieData }) {
     };
 
     fetchImdbData();
-  }, [movieData]);
+  }, [movieData, dateToday]);
 
   function formatString(stringNumber) {
     if (!stringNumber || typeof stringNumber !== "string") {
@@ -61,6 +62,14 @@ export default function ImdbInfo({ movieData }) {
 
   const formatedVotes = formatString(data?.imdbVotes);
   const formatedBoxOffice = formatString(data?.BoxOffice);
+
+  if (movieData?.release_date > dateToday) {
+    return (
+      <div>
+        <p className="text-[0.65rem] font-semibold">Not Released</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div

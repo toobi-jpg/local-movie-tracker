@@ -116,6 +116,21 @@ export default function Poster({ data }) {
     },
   };
 
+  // const containerVariants = {
+  //   hidden: { opacity: 1 },
+  //   visible: {
+  //     opacity: 1,
+  //     transition: {
+  //       staggerChildren: 0.1,
+  //     },
+  //   },
+  // };
+
+  // const posterVariants = {
+  //   hidden: { y: 500, opacity: 0 },
+  //   visible: { y: 0, opacity: 1 },
+  // };
+
   const handleImdbClick = () => {
     setIsImdbOpen(true);
   };
@@ -125,14 +140,15 @@ export default function Poster({ data }) {
 
   return (
     <motion.div
-      layout
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{
-        y: 100,
-        opacity: 0,
-        transition: { duration: 0.3 },
-      }}
+      // variants={posterVariants}
+      // layout
+      // initial={{ y: 100, opacity: 0 }}
+      // animate={{ y: 0, opacity: 1 }}
+      // exit={{
+      //   y: 100,
+      //   opacity: 0,
+      //   transition: { duration: 0.3 },
+      // }}
       title={data.title}
       className={`relative h-[250px] w-[165px] min-w-[165px] transition-all duration-200 ease-in-out group poster-shadow ${
         isMovieReleased
@@ -162,7 +178,7 @@ export default function Poster({ data }) {
       >
         <AnimatePresence>
           {isImdbOpen ? (
-            <ImdbInfo movieData={data} />
+            <ImdbInfo movieData={data} dateToday={today} />
           ) : (
             <motion.p
               initial={{ opacity: 0 }}
@@ -172,7 +188,7 @@ export default function Poster({ data }) {
               }}
               exit={{ opacity: 0 }}
               className="text-[0.9rem] font-semibold font-[impact] 
-        pointer-events-none tracking-wid"
+              pointer-events-none tracking-wid"
             >
               IMDb
             </motion.p>

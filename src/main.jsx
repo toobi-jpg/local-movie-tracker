@@ -4,6 +4,7 @@ import { SavedProvider } from "./context/SavedContext.jsx";
 import { SimilarMoviesProvider } from "./context/SimilarMoviesContext.jsx";
 import { SettingsProvider } from "./context/SettingsContext.jsx";
 import { SocketProvider } from "./context/SocketContext.jsx";
+import { SearchResultsProvider } from "./context/SearchResultsContext.jsx";
 import "./index.css";
 import App from "./App.jsx";
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")).render(
       <SavedProvider>
         <SimilarMoviesProvider>
           <SettingsProvider>
-            <App />
+            <SearchResultsProvider>
+              <App />
+            </SearchResultsProvider>
           </SettingsProvider>
         </SimilarMoviesProvider>
       </SavedProvider>
