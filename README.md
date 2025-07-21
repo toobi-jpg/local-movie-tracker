@@ -1,6 +1,7 @@
 # Movie Tracker & Release Notifier
 
 A personal, self-hosted application to track movie and TV show releases. It uses Puppeteer for automated release checking and the TMDB API for movie data, with optional Telegram notifications.
+(** Started as a learning project for backend/Node.js, expect messy code and half finished refactors. **)
 
 ---
 
