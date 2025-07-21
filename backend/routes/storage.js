@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 const fs = require("fs").promises;
 const path = require("path");
-const { scrapeMovieData } = require("./scrape");
 const { processAndSaveScrapedData } = require("../utils/dataProcessor");
 const STORAGE_FILE = path.join(__dirname, "storage.json");
 
@@ -61,25 +60,16 @@ module.exports = function (io, getSettings) {
       }
 
       console.log(
-        `Movie "${movieData.title}" is released. Initiating scrape...`
-      );
-      const scrapedResults = await scrapeMovieData(
-        movieData.title,
-        null,
-        movieData.id,
-        io
-      );
-      console.log(
-        `Scraping for "${movieData.title}" completed. Found ${scrapedResults.length} items.`
+        `Movie "${movieData.title}" is released. Initiating processing...`
       );
 
-      const appSettings = getSettings();
+      storageData.push(movieToAdd);
+      io.emit("storage:updated", storageData);
+
       const updatedStorageData = await processAndSaveScrapedData(
         storageData,
-        movieData,
-        scrapedResults,
-        io,
-        appSettings
+        movieToAdd,
+        io
       );
 
       await fs.writeFile(

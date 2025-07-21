@@ -27,7 +27,7 @@ export default function Tracking() {
         className="absolute -top-5 left-0 flex 
       justify-center items-center gap-3"
       >
-        <h1 className="text-2xl text-shadow-lg">Tracking</h1>
+        <h1 className="text-2xl text-shadow-lg">Tracking Watchlist</h1>
 
         <FullSearchButton />
       </div>

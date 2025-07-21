@@ -60,7 +60,7 @@ export default function FullSearchButton() {
     <Tooltip text={"Perform full tracked list search"}>
       <button
         className={`flex justify-center items-center
-          w-6 h-6 cursor-pointer group z-50 group translate-y-0.5
+          w-6 h-6 cursor-pointer group z-50 group translate-y-0
           rounded-lg transition-all duration-200 ease-in-out`}
         onClick={() => handleFullSearch()}
       >

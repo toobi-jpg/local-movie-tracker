@@ -25,7 +25,7 @@ const settingsRoutes = require("./routes/settings");
 const { scrapeMovieData } = require("./routes/scrape");
 const { sendTelegramNotification } = require("./utils/telegramBot");
 const { readSettings } = require("./utils/settingsManager");
-const { findBestMatchInResults } = require("./utils/dataProcessor");
+const { processAndSaveScrapedData } = require("./utils/dataProcessor");
 
 let localFeatureHandler;
 
@@ -43,6 +43,7 @@ let appSettings;
 const STORAGE_FILE = path.join(__dirname, "routes", "storage.json");
 
 const dateToday = () => new Date().toISOString().split("T")[0];
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 app.use(express.json());
 app.use(cors());
@@ -82,8 +83,8 @@ async function scrapeAllMovies() {
 
   console.log(`Found ${moviesToScrape.length} movies to scrape. Starting...`);
 
-  let updated = false;
   const today = dateToday();
+  let updatedStorageData = [...allMovies];
 
   for (const movie of moviesToScrape) {
     try {
@@ -93,67 +94,28 @@ async function scrapeAllMovies() {
       }
 
       io.emit("search:progress", { message: `Searching ${movie.title}...` });
-      console.log(`Initiating scrape for "${movie.title}"...`);
-      const scrapedResults = await scrapeMovieData(
-        movie.title,
-        movie.release_date,
-        movie.id,
+      console.log(`Initiating processing for "${movie.title}"...`);
+
+      updatedStorageData = await processAndSaveScrapedData(
+        updatedStorageData,
+        movie,
         io
       );
-
-      const bestMatch = findBestMatchInResults(
-        scrapedResults,
-        movie.title.toLowerCase().replace("*", ""),
-        new Date(movie.release_date).getFullYear(),
-        new Date(movie.release_date)
-      );
-
-      if (bestMatch) {
-        updated = true;
-        const movieIndex = allMovies.findIndex((m) => m.id === movie.id);
-        if (movieIndex !== -1) {
-          allMovies[movieIndex].scrapedDetails = bestMatch;
-          console.log(`Match found for "${movie.title}"`);
-
-          if (bestMatch.bond) {
-            console.log("Found a bond, executing local feature...");
-            console.log("Bond found:", bestMatch.bond);
-
-            await localFeatureHandler(bestMatch.bond, movie.title);
-          } else {
-            console.log(
-              "No bond found for the best match, skipping local feature."
-            );
-          }
-
-          if (appSettings.notifications && movie.poster_path) {
-            const notificationImg = `https://image.tmdb.org/t/p/w300${movie.poster_path}`;
-            const notificationMessage = `*${movie.title}* is now out! Provider: ${bestMatch.provider}`;
-            await sendTelegramNotification(
-              notificationMessage,
-              notificationImg
-            );
-          }
-        }
-      } else {
-        console.log(
-          `No match found for "${movie.title}" during scheduled scrape.`
-        );
-      }
     } catch (error) {
       console.error(`Scheduled scrape for "${movie.title}" failed:`, error);
     }
+
+    console.log("Waiting for 5 seconds before the next movie...");
+    await delay(5000);
   }
 
-  if (updated) {
-    await fs.writeFile(
-      STORAGE_FILE,
-      JSON.stringify(allMovies, null, 2),
-      "utf8"
-    );
-    console.log("Storage.json updated with new scrape details.");
-    io.emit("storage:updated", allMovies);
-  }
+  await fs.writeFile(
+    STORAGE_FILE,
+    JSON.stringify(updatedStorageData, null, 2),
+    "utf8"
+  );
+  console.log("Storage.json updated with new scrape details.");
+  io.emit("storage:updated", updatedStorageData);
 
   console.log("Full movie scrape completed.");
   io.emit("search:end", { message: "Search for movies has finished" });
@@ -186,11 +148,8 @@ function scheduleCronJob() {
 }
 
 server.listen(port, async () => {
-  console.log(`🚀 Server listening on port: ${port}`);
+  console.log(`Server listening on port: ${port}`);
   appSettings = await readSettings();
 
-  // if (appSettings.notifications) {
-  //   await sendTelegramNotification("Server is up and running!");
-  // }
   scheduleCronJob();
 });

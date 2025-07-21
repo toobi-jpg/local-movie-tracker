@@ -3,18 +3,99 @@ const express = require("express");
 const router = express.Router();
 const puppeteer = require("puppeteer");
 
-async function scrapeMovieData(movieTitle, release_date, movieId, io) {
+const USER_AGENTS = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/118.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/118.0.2088.76",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/118.0",
+];
+
+function getRandomUserAgent() {
+  const randomIndex = Math.floor(Math.random() * USER_AGENTS.length);
+  return USER_AGENTS[randomIndex];
+}
+
+async function scrapeMovieData(searchTerm, movieId, io) {
   let browser;
   try {
     if (io) io.emit("scrapefor:start", movieId);
-    console.log("Initiating scrape for:", movieTitle);
-    browser = await puppeteer.launch({ headless: true });
+    console.log(`Initiating scrape for search term: "${searchTerm}"`);
+    browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        "--enable-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-client-side-phishing-detection",
+        "--disable-extensions",
+        "--disable-sync",
+        "--disable-features=SafeBrowseEnhancedProtection,SafeBrowseRealTimeUrlChecks",
+        "--disable-infobars",
+        "--no-default-browser-check",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+    });
     const page = await browser.newPage();
+    const userAgent = getRandomUserAgent();
+    console.log(`Using User-Agent: ${userAgent}`);
+    await page.setUserAgent(userAgent);
+
     const urlTemplate = process.env.SCRAPE_URL_TEMPLATE;
+    const ALLOWED_DOMAINS = [new URL(process.env.SCRAPE_URL_TEMPLATE).hostname];
+    const EXTRA_DOMAIN_1 = process.env.ALLOWED_DOMAIN_1;
+
+    if (EXTRA_DOMAIN_1) {
+      ALLOWED_DOMAINS.push(EXTRA_DOMAIN_1);
+    }
+
+    const BLOCKED_RESOURCE_TYPES = ["image", "stylesheet", "font", "media"];
+    const BLOCKED_URL_PATTERNS = [
+      "google-analytics.com",
+      "doubleclick.net",
+      "adservice.google.com",
+    ];
+
+    await page.setRequestInterception(true);
+
+    page.on("request", (request) => {
+      const requestUrl = new URL(request.url());
+      const resourceType = request.resourceType();
+
+      if (BLOCKED_URL_PATTERNS.some((p) => requestUrl.hostname.includes(p))) {
+        return request.abort();
+      }
+      if (BLOCKED_RESOURCE_TYPES.includes(resourceType)) {
+        return request.abort();
+      }
+      if (!ALLOWED_DOMAINS.includes(requestUrl.hostname)) {
+        return request.abort();
+      }
+      request.continue();
+    });
 
     if (!urlTemplate) {
-      console.error("SCRAPE_URL_TEMPLATE is not configured in .env.local file");
-      return [];
+      throw new Error("SCRAPE_URL_TEMPLATE is not configured.");
+    }
+
+    const urlToScrape = urlTemplate.replace(
+      "%%MOVIE_TITLE%%",
+      encodeURIComponent(searchTerm)
+    );
+
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        await page.goto(urlToScrape, {
+          waitUntil: "networkidle2",
+          timeout: 30000,
+        });
+        break;
+      } catch (e) {
+        attempts++;
+        console.warn(`Attempt ${attempts} failed for page.goto. Retrying...`);
+        if (attempts >= 3) throw e;
+      }
     }
 
     const selectors = {
@@ -32,88 +113,42 @@ async function scrapeMovieData(movieTitle, release_date, movieId, io) {
       provider: process.env.SELECTOR_PROVIDER,
     };
 
-    if (!selectors.resultsContainer || !selectors.movieEntry) {
-      console.error(
-        "Essential scraper selectors are not configured in environment variables."
-      );
-      return [];
-    }
-
-    let searchTerm = movieTitle;
-    if (
-      release_date &&
-      typeof release_date === "string" &&
-      release_date.length > 0
-    ) {
-      const releaseYear = release_date.split("-")[0];
-      if (releaseYear) {
-        searchTerm += " " + releaseYear;
-      }
-    }
-
-    const urlToScrape = urlTemplate.replace(
-      "%%MOVIE_TITLE%%",
-      encodeURIComponent(searchTerm)
-    );
-
-    await page.goto(urlToScrape, { waitUntil: "networkidle2" });
-
     const extractedMovies = await page.evaluate((sel) => {
       const results = [];
       const resultsList = document.querySelector(sel.resultsContainer);
-
-      if (!resultsList) {
-        console.warn(
-          "Could not find the main list container using selector:",
-          sel.resultsContainer
-        );
-        return results;
-      }
+      if (!resultsList) return results;
 
       const movieEntries = Array.from(
         resultsList.querySelectorAll(sel.movieEntry)
       );
 
-      for (let i = 0; i < Math.min(movieEntries.length, 5); i++) {
+      for (let i = 0; i < Math.min(movieEntries.length, 20); i++) {
         const entry = movieEntries[i];
-        const typeElement = entry.querySelector(sel.type);
-        const titleElement = entry.querySelector(sel.title);
-        const uploadedSpan = entry.querySelector(sel.uploaded);
-        const iconElement = entry.querySelector(sel.icon);
-        const bondElement = entry.querySelector(sel.bond);
-        const massElement = entry.querySelector(sel.mass);
         const popularityElement = entry.querySelector(sel.popularity);
-        const sourceCountElement = entry.querySelector(sel.sourceCount);
-        const providerElement = entry.querySelector(sel.provider);
-
         results.push({
-          type: typeElement ? typeElement.innerText.trim() : "N/A",
-          title: titleElement ? titleElement.innerText.trim() : "N/A",
-          uploadedTimestamp: uploadedSpan
-            ? uploadedSpan.getAttribute("title")
-            : "N/A",
-          uploadedDate: uploadedSpan ? uploadedSpan.innerText.trim() : "N/A",
-          icon: iconElement ? iconElement.alt : "N/A",
-          bond: bondElement
-            ? bondElement.getAttribute(sel.bondAttribute)
-            : null,
-          massText: massElement ? massElement.innerText.trim() : "N/A",
+          type: entry.querySelector(sel.type)?.innerText.trim() || "N/A",
+          title: entry.querySelector(sel.title)?.innerText.trim() || "N/A",
+          uploadedDate:
+            entry.querySelector(sel.uploaded)?.innerText.trim() || "N/A",
+          icon: entry.querySelector(sel.icon)?.alt || "N/A",
+          bond:
+            entry.querySelector(sel.bond)?.getAttribute(sel.bondAttribute) ||
+            null,
+          massText: entry.querySelector(sel.mass)?.innerText.trim() || "N/A",
           popularity: popularityElement
             ? parseInt(popularityElement.innerText.trim(), 10)
             : 0,
-          sourceCount: sourceCountElement
-            ? parseInt(sourceCountElement.innerText.trim(), 10)
-            : 0,
-          provider: providerElement ? providerElement.innerText.trim() : "N/A",
+          provider:
+            entry.querySelector(sel.provider)?.innerText.trim() || "N/A",
         });
       }
       return results;
     }, selectors);
 
-    console.log("Scraping completed for:", movieTitle);
+    console.log(`Scraping for "${searchTerm}" completed.`);
     return extractedMovies;
   } catch (error) {
-    console.error(`Scraping failed for ${movieTitle}:`, error);
+    console.error(`Scraping failed for "${searchTerm}":`, error);
     return [];
   } finally {
     if (io) io.emit("scrapefor:end", movieId);
