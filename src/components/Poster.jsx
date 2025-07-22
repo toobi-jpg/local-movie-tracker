@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Tooltip from "./Tooltip";
 import LoadingIcon from "../icons/LoadingIcon";
 import FetchedDetails from "./PosterExtras/FetchedDetails";
-import Dropdown from "./PosterExtras/Dropdown";
+import SeriesDetails from "./PosterExtras/SeriesDetails";
 import AddButton from "./PosterExtras/AddButton";
 import RemoveButton from "./PosterExtras/RemoveButton";
 import ReleaseDate from "./PosterExtras/ReleaseDate";
@@ -41,6 +41,7 @@ export default function Poster({ data }) {
   const [isSearching, setIsSearching] = useState(false);
   const [isImdbOpen, setIsImdbOpen] = useState(false);
   const [eyeHover, setEyeHover] = useState(false);
+  const [seriesData, setSeriesData] = useState({});
 
   const isMovieSaved = saved.some((movie) => movie.id === data.id);
   const isMovieReleased = saved.some(
@@ -115,6 +116,26 @@ export default function Poster({ data }) {
     console.log(data);
   };
 
+  const fetchSeriesDetails = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/tmdb/details-series/${data.id}`
+      );
+      if (!response.ok) {
+        throw new Error("API Error:", response.status, response.statusText);
+      }
+      const fetchedSeriesData = await response.json();
+      if (fetchedSeriesData) {
+        setSeriesData(fetchedSeriesData);
+        console.log("FETCHED SERIES DETAILS", fetchedSeriesData);
+      } else {
+        console.log("No data returned from API");
+      }
+    } catch (error) {
+      console.log("Error fetching series data", error);
+    }
+  };
+
   return (
     <motion.div
       title={data.title}
@@ -125,7 +146,7 @@ export default function Poster({ data }) {
       }`}
       onMouseEnter={() => setMainHover(true)}
       onMouseLeave={() => setMainHover(false)}
-      onClick={() => handleLogDataClick()}
+      // onClick={() => handleLogDataClick()}
     >
       <motion.button
         layout
@@ -293,10 +314,17 @@ export default function Poster({ data }) {
           )}
         </div>
       ) : (
-        <Dropdown
-          data={data}
-          className={"absolute top-1 right-1 inline-block z-50"}
-        />
+        <div>
+          {mainHover && (
+            <SeriesDetails
+              data={data}
+              className={``}
+              mainHover={mainHover}
+              fetchSeriesDetails={fetchSeriesDetails}
+              seriesData={seriesData}
+            />
+          )}
+        </div>
       )}
     </motion.div>
   );

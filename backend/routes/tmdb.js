@@ -256,8 +256,8 @@ router.get("/providers/:query", async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    console.error("Error fetching similar movies on TMDb:", error);
-    res.status(500).json({ error: "Failed to fetch similar movies." });
+    console.error("Error fetching providers movies on TMDb:", error);
+    res.status(500).json({ error: "Failed to fetch providers movies." });
   }
 });
 
@@ -292,8 +292,8 @@ router.get("/imdb-rating-movie/:query", async (req, res) => {
       res.status(404).json({ error: "IMDb ID not found for this movie." });
     }
   } catch (error) {
-    console.error("Error fetching similar movies on TMDb:", error);
-    res.status(500).json({ error: "Failed to fetch similar movies." });
+    console.error("Error fetching imdb rating movies on TMDb:", error);
+    res.status(500).json({ error: "Failed to fetch imdb rating movies." });
   }
 });
 
@@ -325,18 +325,18 @@ router.get("/imdb-rating-series/:query", async (req, res) => {
       const omdbData = await fetchImdbRating(imdbId);
       res.json(omdbData);
     } else {
-      res.status(404).json({ error: "IMDb ID not found for this movie." });
+      res.status(404).json({ error: "IMDb ID not found for this series." });
     }
   } catch (error) {
-    console.error("Error fetching similar movies on TMDb:", error);
-    res.status(500).json({ error: "Failed to fetch similar movies." });
+    console.error("Error fetching imdb ratings for series on TMDb:", error);
+    res.status(500).json({ error: "Failed to imdb ratings for series." });
   }
 });
 
 router.get("/details-series/:query", async (req, res) => {
   const query = encodeURIComponent(req.params.query);
   try {
-    const url = `https://api.themoviedb.org/3/tv/${query}?language=en-US`;
+    const baseUrl = `https://api.themoviedb.org/3/tv/${query}?language=en-US`;
 
     const options = {
       method: "GET",
@@ -345,27 +345,63 @@ router.get("/details-series/:query", async (req, res) => {
         Authorization: `Bearer ${TMDB_TOKEN}`,
       },
     };
-    const response = await fetch(url, options);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("TMDb API Error:", response.status, errorText);
+    const baseResponse = await fetch(baseUrl, options);
+
+    if (!baseResponse.ok) {
+      const errorText = await baseResponse.text();
+      console.error("TMDb API Error:", baseResponse.status, errorText);
       return res
-        .status(response.status)
-        .json({ error: `TMDb API error: ${response.status} ${errorText}` });
+        .status(baseResponse.status)
+        .json({ error: `TMDb API error: ${baseResponse.status} ${errorText}` });
     }
 
-    const data = await response.json();
-    const imdbId = data.imdb_id;
-    if (imdbId) {
-      const omdbData = await fetchImdbRating(imdbId);
-      res.json(omdbData);
+    const baseData = await baseResponse.json();
+    const numberOfSeasons = baseData.number_of_seasons;
+
+    const appendParam = Array.from(
+      { length: numberOfSeasons },
+      (_, i) => `season/${i + 1}`
+    ).join(",");
+
+    const fullUrl = `https://api.themoviedb.org/3/tv/${query}?language=en-US&append_to_response=${appendParam}`;
+
+    const fullResponse = await fetch(fullUrl, options);
+
+    if (!fullResponse.ok) {
+      const errorText = await fullResponse.text();
+      console.error(
+        "TMDb API Error (seasons):",
+        fullResponse.status,
+        errorText
+      );
+      return res
+        .status(fullResponse.status)
+        .json({ error: `TMDb API error: ${fullResponse.status} ${errorText}` });
+    }
+
+    const fullData = await fullResponse.json();
+
+    const seasonDetails = [];
+
+    for (let i = 1; i <= numberOfSeasons; i++) {
+      const key = `season/${i}`;
+      if (fullData[key]) {
+        seasonDetails.push(fullData[key]);
+        delete fullData[key];
+      }
+    }
+
+    fullData.season_details = seasonDetails;
+
+    if (fullData) {
+      res.json(fullData);
     } else {
-      res.status(404).json({ error: "IMDb ID not found for this movie." });
+      res.status(404).json({ error: "Full series data not found." });
     }
   } catch (error) {
-    console.error("Error fetching similar movies on TMDb:", error);
-    res.status(500).json({ error: "Failed to fetch similar movies." });
+    console.error("Error fetching full series details on TMDb:", error);
+    res.status(500).json({ error: "Failed to fetch full series details." });
   }
 });
 
