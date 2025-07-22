@@ -23,6 +23,10 @@ import { motion, AnimatePresence } from "motion/react";
 import Tooltip from "./Tooltip";
 import LoadingIcon from "../icons/LoadingIcon";
 import FetchedDetails from "./PosterExtras/FetchedDetails";
+import Dropdown from "./PosterExtras/Dropdown";
+import AddButton from "./PosterExtras/AddButton";
+import RemoveButton from "./PosterExtras/RemoveButton";
+import ReleaseDate from "./PosterExtras/ReleaseDate";
 
 export default function Poster({ data }) {
   const [mainHover, setMainHover] = useState(false);
@@ -42,6 +46,7 @@ export default function Poster({ data }) {
   const isMovieReleased = saved.some(
     (movie) => movie.id === data.id && movie.scrapedDetails
   );
+  const isSeries = data.media_type && data.media_type === "tv";
   const iconSize = "w-6 h-6";
 
   useEffect(() => {
@@ -95,7 +100,7 @@ export default function Poster({ data }) {
 
   const dateToday = () => new Date().toISOString().split("T")[0];
   const today = dateToday();
-  const movieHasAired = data.release_date < today;
+  const mediaHasAired = (data.release_date || data.first_air_date) < today;
 
   const defaultImageSrc = data.poster_path
     ? `https://image.tmdb.org/t/p/w300${data.poster_path}`
@@ -105,6 +110,10 @@ export default function Poster({ data }) {
     isMovieReleased && data.images?.backdrops?.[0]
       ? `https://image.tmdb.org/t/p/w780${data.images.backdrops[0]}`
       : defaultImageSrc;
+
+  const handleLogDataClick = () => {
+    console.log(data);
+  };
 
   return (
     <motion.div
@@ -116,6 +125,7 @@ export default function Poster({ data }) {
       }`}
       onMouseEnter={() => setMainHover(true)}
       onMouseLeave={() => setMainHover(false)}
+      onClick={() => handleLogDataClick()}
     >
       <motion.button
         layout
@@ -155,29 +165,11 @@ export default function Poster({ data }) {
         </AnimatePresence>
       </motion.button>
       {!isMovieReleased && (
-        <div
-          className={`absolute bottom-1 right-1 z-20 flex flex-col backdrop-blur-xs 
-        opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out
-        py-0.5 px-1.5 text-center rounded-md border 
-        ${
-          !movieHasAired
-            ? "border-orange-800/50 bg-black/30"
-            : "border-green-800/50 bg-black/30"
-        }`}
-        >
-          {!movieHasAired ? (
-            <h2 className="text-[0.6rem] font-medium small-text-shadow">
-              Coming:
-            </h2>
-          ) : (
-            <h2 className="text-[0.6rem] font-medium small-text-shadow">
-              Released:
-            </h2>
-          )}
-          <h2 className="text-[0.6rem] font-medium small-text-shadow">
-            {data.release_date}
-          </h2>
-        </div>
+        <ReleaseDate
+          data={data}
+          mediaHasAired={mediaHasAired}
+          isSeries={isSeries}
+        />
       )}
       {isMovieReleased && mainHover && (
         <>
@@ -222,7 +214,6 @@ export default function Poster({ data }) {
           />
         )}
       </AnimatePresence>
-
       <div className="relative w-full h-full" id="image-container">
         <motion.img
           className={`absolute max-w-[165px] h-full object-cover ${
@@ -258,7 +249,6 @@ export default function Poster({ data }) {
           />
         )}
       </div>
-
       <button
         id="similar-movies-button"
         type="button"
@@ -280,131 +270,33 @@ export default function Poster({ data }) {
           />
         </Tooltip>
       </button>
-
-      {!isMovieSaved ? (
-        <button
-          type="button"
-          className={`absolute top-2 right-2 ${iconSize} md:group-hover:opacity-100 md:opacity-0 
-      hover:scale-110  ${
-        !movieHasAired ? "hover:-rotate-12" : ""
-      } cursor-pointer transition-all duration-100 ease-in-out z-20
-      `}
-          onClick={handleClickSave}
-        >
-          {!movieHasAired ? (
-            <Tooltip
-              text={"Add to track list"}
-              position="left"
-              className={"rotate-12"}
-            >
-              <CameraIcon
-                size={"100%"}
-                color="white"
-                key={data.id + "camera"}
-                className={"scale-x-[-1] icon-shadow"}
-              />
-            </Tooltip>
-          ) : (
-            <motion.div
-              id="eye-icon"
-              className="h-full "
-              onMouseEnter={() => setEyeHover(true)}
-              onMouseLeave={() => setEyeHover(false)}
-            >
-              <Tooltip text={"Add to watchlist"} position="left">
-                {!eyeHover ? (
-                  <EyeIcon
-                    size={"100%"}
-                    color="white"
-                    key={data.id + "eye check"}
-                    className={"icon-shadow"}
-                  />
-                ) : (
-                  <EyeAddIcon
-                    size={"100%"}
-                    color="white"
-                    key={data.id + "eye check"}
-                    className={"icon-shadow"}
-                  />
-                )}
-              </Tooltip>
-            </motion.div>
-          )}
-        </button>
-      ) : (
+      {!isSeries ? (
         <div>
-          {!isMovieReleased ? (
-            <button
-              type="button"
-              className={`absolute top-1 right-2 ${iconSize} opacity-100 
-          transition-all duration-100 ease-in-out hover:scale-110 z-20`}
-              onMouseEnter={() => setHover(true)}
-              onMouseLeave={() => setHover(false)}
-              onClick={handleClickRemove}
-            >
-              {hover ? (
-                <div
-                  className="flex justify-center items-center bg-black/60 
-            rounded-sm w-[120%] h-[120%] cursor-pointer"
-                >
-                  <Tooltip text={"Remove from track list"} position="left">
-                    <NoCameraIcon
-                      size={"80%"}
-                      color="white"
-                      key={data.id + "removeCamera"}
-                      className={"scale-x-[-1] translate-x-[15%]"}
-                    />
-                  </Tooltip>
-                </div>
-              ) : (
-                <div
-                  className="flex justify-center items-center bg-black/60 
-            rounded-sm w-[120%] h-[120%] border border-orange-500/30 backdrop-blur-lg"
-                >
-                  <CameraIcon
-                    size={"80%"}
-                    color="white"
-                    key={data.id + "camera"}
-                    className={"scale-x-[-1]"}
-                  />
-                </div>
-              )}
-            </button>
+          {!isMovieSaved ? (
+            <AddButton
+              data={data}
+              mediaHasAired={mediaHasAired}
+              handleClickSave={handleClickSave}
+              iconSize={iconSize}
+              eyeHover={eyeHover}
+              setEyeHover={setEyeHover}
+            />
           ) : (
-            <button
-              type="button"
-              className={`absolute top-2 right-2 ${iconSize} md:group-hover:opacity-100 md:opacity-0 hover:scale-110 cursor-pointer transition-all duration-100 ease-in-out z-20`}
-              onMouseEnter={() => setHover(true)}
-              onMouseLeave={() => setHover(false)}
-              onClick={handleClickRemove}
-            >
-              <motion.div
-                id="eye-icon"
-                className="h-full "
-                onMouseEnter={() => setEyeHover(true)}
-                onMouseLeave={() => setEyeHover(false)}
-              >
-                <Tooltip text={"Remove from watchlist"} position="left">
-                  {!eyeHover ? (
-                    <EyeIcon
-                      size={"100%"}
-                      color="white"
-                      key={data.id + "eye"}
-                      className={"icon-shadow"}
-                    />
-                  ) : (
-                    <EyeRemoveIcon
-                      size={"100%"}
-                      color="white"
-                      key={data.id + "eye remove"}
-                      className={"icon-shadow"}
-                    />
-                  )}
-                </Tooltip>
-              </motion.div>
-            </button>
+            <RemoveButton
+              data={data}
+              handleClickRemove={handleClickRemove}
+              iconSize={iconSize}
+              eyeHover={eyeHover}
+              setEyeHover={setEyeHover}
+              isMovieReleased={isMovieReleased}
+            />
           )}
         </div>
+      ) : (
+        <Dropdown
+          data={data}
+          className={"absolute top-1 right-1 inline-block z-50"}
+        />
       )}
     </motion.div>
   );
