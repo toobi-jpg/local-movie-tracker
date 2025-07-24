@@ -52,12 +52,12 @@ export default function SearchScreen() {
       ref={resultsScreenRef}
       key="search-screen"
       className="fixed left-1/2 -translate-x-1/2 bottom-0 w-[99%] border border-white/5
-      h-[320px] z-50 px-8 bg-black/40 backdrop-blur-lg rounded-xl
+      h-[320px] z-35 px-8 bg-black/40 backdrop-blur-lg rounded-xl
      flex justify-center items-center"
     >
       <button
         className="absolute top-1 right-2 w-7 h-7 transition-all duration-100 ease-in-out
-       rounded-lg hover:scale-125 cursor-pointer z-50"
+       rounded-lg hover:scale-125 cursor-pointer z-0"
         onClick={() => (setResultsOpen(false), setInputOpen(false))}
       >
         <CloseIcon size={"100%"} className={"pointer-events-none z-0"} />

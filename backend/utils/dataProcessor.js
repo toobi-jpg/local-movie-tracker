@@ -50,7 +50,7 @@ function findBestCandidate(candidates) {
   return candidates[0];
 }
 
-function isMatch(item, rules, baseInfo) {
+function isMatch(item, rules, baseInfo, isTvEpisode) {
   const { normalizedMovieTitle, movieYear, movieReleaseDate } = baseInfo;
   const normalizedScrapedTitle = item.title
     ? item.title.toLowerCase().replace(/[\.\_]/g, " ")
@@ -66,7 +66,7 @@ function isMatch(item, rules, baseInfo) {
 
   if (!normalizedScrapedTitle.includes(normalizedMovieTitle))
     return reject(`Title mismatch. Expected to find "${normalizedMovieTitle}"`);
-  if (!normalizedScrapedTitle.includes(movieYear.toString()))
+  if (!isTvEpisode && !normalizedScrapedTitle.includes(movieYear.toString()))
     return reject(`Year mismatch. Expected to find "${movieYear}"`);
   if (new Date(item.uploadedDate) < movieReleaseDate)
     return reject(
@@ -111,15 +111,19 @@ function isMatch(item, rules, baseInfo) {
   return true;
 }
 
-function findBestHighMatch(scrapedResults, baseInfo) {
+function findBestHighMatch(scrapedResults, baseInfo, isTvEpisode) {
   const t1_rules = {
     mustInclude: process.env.FILTER_HIGH_T1_MUST_INCLUDE,
-    minPopularity: parseInt(process.env.FILTER_HIGH_T1_MIN_POPULARITY, 10),
+    minPopularity: isTvEpisode
+      ? parseInt(process.env.FILTER_HIGH_T1_MIN_POPULARITY_TV, 10)
+      : parseInt(process.env.FILTER_HIGH_T1_MIN_POPULARITY, 10),
     allowedIcons: (process.env.FILTER_HIGH_T1_ALLOWED_ICONS || "").split(","),
   };
+
   const tier1Matches = scrapedResults.filter((item) =>
-    isMatch(item, t1_rules, baseInfo)
+    isMatch(item, t1_rules, baseInfo, isTvEpisode)
   );
+
   if (tier1Matches.length > 0) {
     console.log(`Found ${tier1Matches.length} Tier-1 HIGH match(es).`);
     return tier1Matches.sort((a, b) => {
@@ -132,12 +136,16 @@ function findBestHighMatch(scrapedResults, baseInfo) {
   const t2_rules = {
     mustInclude: process.env.FILTER_HIGH_T2_MUST_INCLUDE,
     mustExclude: process.env.FILTER_HIGH_T2_MUST_EXCLUDE,
-    allowedIcons: (process.env.FILTER_HIGH_T1_ALLOWED_ICONS || "").split(","),
-    minPopularity: parseInt(process.env.FILTER_HIGH_T1_MIN_POPULARITY, 10),
+    allowedIcons: (process.env.FILTER_HIGH_T2_ALLOWED_ICONS || "").split(","),
+    minPopularity: isTvEpisode
+      ? parseInt(process.env.FILTER_HIGH_T2_MIN_POPULARITY_TV, 10)
+      : parseInt(process.env.FILTER_HIGH_T2_MIN_POPULARITY, 10),
   };
+
   const tier2Matches = scrapedResults.filter((item) =>
-    isMatch(item, t2_rules, baseInfo)
+    isMatch(item, t2_rules, baseInfo, isTvEpisode)
   );
+
   if (tier2Matches.length > 0) {
     console.log(`Found ${tier2Matches.length} Tier-2 HIGH match(es).`);
     return tier2Matches.sort((a, b) => {
@@ -150,22 +158,22 @@ function findBestHighMatch(scrapedResults, baseInfo) {
   return null;
 }
 
-function findBestLowMatch(scrapedResults, baseInfo) {
+function findBestLowMatch(scrapedResults, baseInfo, isTvEpisode) {
   const rules = {
     mustInclude: process.env.FILTER_LOW_MUST_INCLUDE,
     preferredSource: process.env.FILTER_LOW_PREFERRED_SOURCE,
     iconMustMatch: process.env.FILTER_LOW_ICON_MUST_MATCH,
     maxMass: parseFloat(process.env.FILTER_LOW_MAX_MASS),
-    minPopSmall: parseInt(
-      process.env.FILTER_LOW_MIN_POPULARITY_SMALL_RELEASE,
-      10
-    ),
-    minPopLarge: parseInt(
-      process.env.FILTER_LOW_MIN_POPULARITY_LARGE_RELEASE,
-      10
-    ),
+    minPopSmall: isTvEpisode
+      ? parseInt(process.env.FILTER_LOW_MIN_POPULARITY_SMALL_RELEASE_TV, 10)
+      : parseInt(process.env.FILTER_LOW_MIN_POPULARITY_SMALL_RELEASE, 10),
+    minPopLarge: isTvEpisode
+      ? parseInt(process.env.FILTER_LOW_MIN_POPULARITY_LARGE_RELEASE_TV, 10)
+      : parseInt(process.env.FILTER_LOW_MIN_POPULARITY_LARGE_RELEASE, 10),
     sourceMustInclude: process.env.FILTER_LOW_SOURCE_MUST_INCLUDE,
-    sourceMinPop: parseInt(process.env.FILTER_LOW_SOURCE_MIN_POPULARITY, 10),
+    sourceMinPop: isTvEpisode
+      ? parseInt(process.env.FILTER_LOW_SOURCE_MIN_POPULARITY_TV, 10)
+      : parseInt(process.env.FILTER_LOW_SOURCE_MIN_POPULARITY, 10),
     sourceProviders: (
       process.env.FILTER_LOW_SOURCE_ALLOWED_PROVIDERS || ""
     ).split(","),
@@ -183,7 +191,8 @@ function findBestLowMatch(scrapedResults, baseInfo) {
       : "";
 
     if (!normalizedScrapedTitle.includes(normalizedMovieTitle)) continue;
-    if (!normalizedScrapedTitle.includes(movieYear.toString())) continue;
+    if (!isTvEpisode && !normalizedScrapedTitle.includes(movieYear.toString()))
+      continue;
     if (new Date(item.uploadedDate) < movieReleaseDate) continue;
     if (
       rules.mustInclude &&
@@ -228,8 +237,14 @@ function findBestLowMatch(scrapedResults, baseInfo) {
   return null;
 }
 
-async function fetchImages(movieId, storageData, movieIndex) {
+async function fetchImages(movieId, storageData, movieIndex, isTvEpisode) {
   if (!TMDB_TOKEN) return;
+  let url;
+  if (isTvEpisode) {
+    url = `https://api.themoviedb.org/3/tv/${movieId}/images`;
+  } else {
+    url = `https://api.themoviedb.org/3/movie/${movieId}/images`;
+  }
   try {
     const response = await fetch(
       `https://api.themoviedb.org/3/movie/${movieId}/images`,
@@ -253,7 +268,9 @@ async function fetchImages(movieId, storageData, movieIndex) {
 }
 
 async function processAndSaveScrapedData(storageData, movieData, io) {
-  const { id, title, release_date } = movieData;
+  const { id, title, release_date, media_type } = movieData;
+
+  const isTvEpisode = media_type === "tv";
 
   const normalizedMovieTitle = title
     .toLowerCase()
@@ -268,25 +285,110 @@ async function processAndSaveScrapedData(storageData, movieData, io) {
 
   let bestMatch = null;
 
-  const highSearchTerm = `${title} ${movieYear} ${
-    process.env.SEARCH_TERM_HIGH || ""
-  }`.trim();
-  const highResults = await scrapeMovieData(highSearchTerm, id, io);
-  if (highResults.length > 0) {
-    bestMatch = findBestHighMatch(highResults, baseInfo);
-    if (bestMatch) {
-      bestMatch.sourceType = "HIGH";
+  if (isTvEpisode) {
+    console.log("Trying HIGH search without year for TV episode...");
+    const highSearchTermNoYear = `${title} ${
+      process.env.SEARCH_TERM_HIGH || ""
+    }`.trim();
+    const highResultsNoYear = await scrapeMovieData(
+      highSearchTermNoYear,
+      id,
+      io
+    );
+
+    if (highResultsNoYear.length > 0) {
+      bestMatch = findBestHighMatch(highResultsNoYear, baseInfo, isTvEpisode);
+      if (bestMatch) {
+        bestMatch.sourceType = "HIGH";
+        console.log(`✅ Found HIGH match without year: "${bestMatch.title}"`);
+      }
+    }
+
+    if (!bestMatch) {
+      console.log("No HIGH match without year. Trying with year...");
+      const highSearchTermWithYear = `${title} ${movieYear} ${
+        process.env.SEARCH_TERM_HIGH || ""
+      }`.trim();
+      const highResultsWithYear = await scrapeMovieData(
+        highSearchTermWithYear,
+        id,
+        io
+      );
+
+      if (highResultsWithYear.length > 0) {
+        bestMatch = findBestHighMatch(
+          highResultsWithYear,
+          baseInfo,
+          isTvEpisode
+        );
+        if (bestMatch) {
+          bestMatch.sourceType = "HIGH";
+          console.log(`✅ Found HIGH match with year: "${bestMatch.title}"`);
+        }
+      }
+    }
+  } else {
+    const highSearchTerm = `${title} ${movieYear} ${
+      process.env.SEARCH_TERM_HIGH || ""
+    }`.trim();
+    const highResults = await scrapeMovieData(highSearchTerm, id, io);
+    if (highResults.length > 0) {
+      bestMatch = findBestHighMatch(highResults, baseInfo, isTvEpisode);
+      if (bestMatch) {
+        bestMatch.sourceType = "HIGH";
+      }
     }
   }
 
   if (!bestMatch) {
     console.log("No suitable HIGH match found. Falling back to LOW search...");
-    const lowSearchTerm = `${title} ${movieYear}`;
-    const lowResults = await scrapeMovieData(lowSearchTerm, id, io);
-    if (lowResults.length > 0) {
-      bestMatch = findBestLowMatch(lowResults, baseInfo);
-      if (bestMatch) {
-        bestMatch.sourceType = "LOW";
+
+    if (isTvEpisode) {
+      console.log("Trying LOW search without year for TV episode...");
+      const lowSearchTermNoYear = title;
+      const lowResultsNoYear = await scrapeMovieData(
+        lowSearchTermNoYear,
+        id,
+        io
+      );
+
+      if (lowResultsNoYear.length > 0) {
+        bestMatch = findBestLowMatch(lowResultsNoYear, baseInfo, isTvEpisode);
+        if (bestMatch) {
+          bestMatch.sourceType = "LOW";
+          console.log(`✅ Found LOW match without year: "${bestMatch.title}"`);
+        }
+      }
+
+      if (!bestMatch) {
+        console.log("No LOW match without year. Trying with year...");
+        const lowSearchTermWithYear = `${title} ${movieYear}`;
+        const lowResultsWithYear = await scrapeMovieData(
+          lowSearchTermWithYear,
+          id,
+          io
+        );
+
+        if (lowResultsWithYear.length > 0) {
+          bestMatch = findBestLowMatch(
+            lowResultsWithYear,
+            baseInfo,
+            isTvEpisode
+          );
+          if (bestMatch) {
+            bestMatch.sourceType = "LOW";
+            console.log(`✅ Found LOW match with year: "${bestMatch.title}"`);
+          }
+        }
+      }
+    } else {
+      const lowSearchTerm = `${title} ${movieYear}`;
+      const lowResults = await scrapeMovieData(lowSearchTerm, id, io);
+      if (lowResults.length > 0) {
+        bestMatch = findBestLowMatch(lowResults, baseInfo, isTvEpisode);
+        if (bestMatch) {
+          bestMatch.sourceType = "LOW";
+        }
       }
     }
   }
@@ -296,7 +398,7 @@ async function processAndSaveScrapedData(storageData, movieData, io) {
     const movieIndex = storageData.findIndex((movie) => movie.id === id);
     if (movieIndex !== -1) {
       storageData[movieIndex].scrapedDetails = bestMatch;
-      await fetchImages(id, storageData, movieIndex);
+      await fetchImages(id, storageData, movieIndex, isTvEpisode);
     }
   } else {
     console.log(

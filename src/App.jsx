@@ -27,16 +27,16 @@ function App() {
     <main className="relative py-10 px-4 md:px-10 hide-scrollbar">
       <div
         id="settings-button"
-        className="fixed right-3 top-2 flex flex-col gap-4"
-        style={{ zIndex: 999 }}
+        className="fixed right-3 top-2 flex flex-col gap-4 z-35"
+        // style={{ zIndex: 999 }}
       >
         <Settings />
       </div>
 
       <div
         id="search-button"
-        className="fixed right-3 bottom-2 flex flex-col gap-4"
-        style={{ zIndex: 999 }}
+        className="fixed right-3 bottom-2 flex flex-col gap-4 z-35"
+        // style={{ zIndex: 999 }}
       >
         <SearchButton />
       </div>

@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 
 export default function SearchButton() {
   const [input, setInput] = useState("");
+  const [screenWidth, setScreenWidth] = useState(1024);
   const { handleSearch, setResultsOpen, inputOpen, setInputOpen } =
     useContext(SearchResultsContext);
 
@@ -63,10 +64,28 @@ export default function SearchButton() {
     };
   }, [handleClickOutside]);
 
+  useEffect(() => {
+    const updateScreenWidth = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    updateScreenWidth();
+
+    window.addEventListener("resize", updateScreenWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateScreenWidth);
+    };
+  }, []);
+
   return (
     <motion.div
       layout
-      animate={{ width: inputOpen ? 420 : 44 }}
+      animate={
+        screenWidth > 768
+          ? { width: inputOpen ? 420 : 44 }
+          : { width: inputOpen ? screenWidth - 20 : 44 }
+      }
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
       className={`h-11 hover:bg-black/40 flex justify-center items-center
         bg-black/50 z-50 group backdrop-blur-md overflow-hidden
@@ -81,7 +100,7 @@ export default function SearchButton() {
         </button>
       )}
       {inputOpen && (
-        <div className="min-w-[420px] w-2/7 pl-3 shadow-md flex justify-center items-center h-full">
+        <div className="w-full pl-3 shadow-md flex justify-center items-center h-full">
           <input
             ref={ref}
             id="movie-search-input"

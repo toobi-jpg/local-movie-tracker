@@ -1,4 +1,5 @@
 // import { useState } from "react";
+import { useState } from "react";
 import Tooltip from "../Tooltip";
 import { CameraIcon } from "../../icons/CameraIcon";
 import { EyeIcon } from "../../icons/EyeIcon";
@@ -10,17 +11,18 @@ export default function AddButton({
   mediaHasAired,
   handleClickSave,
   iconSize,
-  setEyeHover,
-  eyeHover,
+  className,
 }) {
+  const [eyeHover, setEyeHover] = useState(false);
+
   return (
     <button
       type="button"
-      className={`absolute top-2 right-2 ${iconSize} md:group-hover:opacity-100 md:opacity-0 
+      className={`${iconSize} md:group-hover:opacity-100 md:opacity-0 
       hover:scale-110  ${
         !mediaHasAired ? "hover:-rotate-12" : ""
       } cursor-pointer transition-all duration-100 ease-in-out z-20
-      `}
+      ${className}`}
       onClick={handleClickSave}
     >
       {!mediaHasAired ? (

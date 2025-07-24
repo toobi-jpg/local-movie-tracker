@@ -55,6 +55,8 @@ export function SavedProvider({ children }) {
           title: data.title,
           release_date: data.release_date,
           poster_path: data.poster_path,
+          media_type: data.media_type,
+          tv_id: data.tv_id,
         }),
       });
     } catch (error) {

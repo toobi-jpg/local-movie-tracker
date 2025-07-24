@@ -233,6 +233,7 @@ router.get("/get-regions", async (req, res) => {
 
 router.get("/providers/:query", async (req, res) => {
   const query = encodeURIComponent(req.params.query);
+
   try {
     const url = `https://api.themoviedb.org/3/movie/${query}/watch/providers`;
 
@@ -258,6 +259,37 @@ router.get("/providers/:query", async (req, res) => {
   } catch (error) {
     console.error("Error fetching providers movies on TMDb:", error);
     res.status(500).json({ error: "Failed to fetch providers movies." });
+  }
+});
+
+router.get("/providers-series/:query", async (req, res) => {
+  const query = encodeURIComponent(req.params.query);
+
+  try {
+    const url = `https://api.themoviedb.org/3/tv/${query}/watch/providers`;
+
+    const options = {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${TMDB_TOKEN}`,
+      },
+    };
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("TMDb API Error:", response.status, errorText);
+      return res
+        .status(response.status)
+        .json({ error: `TMDb API error: ${response.status} ${errorText}` });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching providers series on TMDb:", error);
+    res.status(500).json({ error: "Failed to fetch providers series." });
   }
 });
 

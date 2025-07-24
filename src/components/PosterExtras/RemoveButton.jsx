@@ -11,19 +11,20 @@ export default function RemoveButton({
   data,
   handleClickRemove,
   iconSize,
-  eyeHover,
-  setEyeHover,
   isMovieReleased,
+  className,
 }) {
   const [hover, setHover] = useState(false);
+  const [eyeHover, setEyeHover] = useState(false);
 
   return (
     <div>
       {!isMovieReleased ? (
         <button
           type="button"
-          className={`absolute top-1 right-2 ${iconSize} opacity-100 
-          transition-all duration-100 ease-in-out hover:scale-110 z-20`}
+          className={`${iconSize} md:group-hover:opacity-100 md:opacity-0 
+      hover:scale-110 cursor-pointer transition-all duration-100 ease-in-out z-20
+      ${className}`}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
           onClick={handleClickRemove}

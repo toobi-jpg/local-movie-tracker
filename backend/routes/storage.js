@@ -41,11 +41,13 @@ module.exports = function (io, getSettings) {
         title: movieData.title,
         release_date: movieData.release_date,
         poster_path: movieData.poster_path,
+        media_type: movieData.media_type || "movie",
+        tv_id: movieData.tv_id || null,
       };
 
       if (movieData.release_date > dateToday()) {
         console.log(
-          `Movie "${movieData.title}" is a future release. Saving without scraping.`
+          `"${movieData.title}" is a future release. Saving without scraping.`
         );
         storageData.push(movieToAdd);
         await fs.writeFile(

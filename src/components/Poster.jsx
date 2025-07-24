@@ -1,11 +1,6 @@
 import { useContext, useEffect, useState, useCallback } from "react";
 
-import { CameraIcon } from "../icons/CameraIcon";
-import { NoCameraIcon } from "../icons/NoCameraIcon";
 import { SquaresIcon } from "../icons/SquaresIcon";
-import { EyeAddIcon } from "../icons/EyeAddIcon";
-import { EyeRemoveIcon } from "../icons/EyeRemoveIcon";
-import { EyeIcon } from "../icons/EyeIcon";
 
 import ImdbInfo from "./ImdbInfo";
 
@@ -47,7 +42,7 @@ export default function Poster({ data }) {
   const isMovieReleased = saved.some(
     (movie) => movie.id === data.id && movie.scrapedDetails
   );
-  const isSeries = data.media_type && data.media_type === "tv";
+  const isSeries = data.media_type === "tv";
   const iconSize = "w-6 h-6";
 
   useEffect(() => {
@@ -67,6 +62,10 @@ export default function Poster({ data }) {
 
     socket.on("scrapefor:start", handleScrapeStart);
     socket.on("scrapefor:end", handleScrapeEnd);
+    return () => {
+      socket.off("scrapefor:start", handleScrapeStart);
+      socket.off("scrapefor:end", handleScrapeEnd);
+    };
   }, [data.id, socket]);
 
   const handleClickSave = (event) => {
@@ -82,12 +81,16 @@ export default function Poster({ data }) {
   };
 
   const handleFetchProviders = useCallback(async () => {
-    const providersData = await fetchProviders(data.id, currentRegion);
+    const providersData = await fetchProviders(
+      isSeries ? data.tv_id : data.id,
+      currentRegion,
+      data.media_type
+    );
     setProviders(providersData);
     if (providersData?.flatrate) {
       setStreamingOn(providersData.flatrate);
     }
-  }, [data.id, currentRegion]);
+  }, [data.id, currentRegion, isSeries, data.tv_id]);
 
   useEffect(() => {
     if (isMovieReleased) {
@@ -135,6 +138,8 @@ export default function Poster({ data }) {
       console.log("Error fetching series data", error);
     }
   };
+
+  if (!data) return null;
 
   return (
     <motion.div
@@ -299,31 +304,31 @@ export default function Poster({ data }) {
               mediaHasAired={mediaHasAired}
               handleClickSave={handleClickSave}
               iconSize={iconSize}
-              eyeHover={eyeHover}
-              setEyeHover={setEyeHover}
+              className={`absolute top-2 right-2`}
             />
           ) : (
             <RemoveButton
               data={data}
               handleClickRemove={handleClickRemove}
               iconSize={iconSize}
-              eyeHover={eyeHover}
-              setEyeHover={setEyeHover}
               isMovieReleased={isMovieReleased}
+              className={`absolute top-1 right-2 `}
             />
           )}
         </div>
       ) : (
         <div>
-          {mainHover && (
-            <SeriesDetails
-              data={data}
-              className={``}
-              mainHover={mainHover}
-              fetchSeriesDetails={fetchSeriesDetails}
-              seriesData={seriesData}
-            />
-          )}
+          {/* {mainHover && ( */}
+          <SeriesDetails
+            data={data}
+            className={``}
+            mainHover={mainHover}
+            fetchSeriesDetails={fetchSeriesDetails}
+            seriesData={seriesData}
+            eyeHover={eyeHover}
+            setEyeHover={setEyeHover}
+          />
+          {/* )} */}
         </div>
       )}
     </motion.div>
